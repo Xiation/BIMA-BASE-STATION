@@ -28,6 +28,7 @@ pillow>=8.2.0
 exifread>=3.5.1
 scipy>=1.7.0
 geopy>=2.3.0
+shapely>=2.0.0
 watchdog>=3.0.0
 python-multipart>=0.0.6
 

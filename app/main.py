@@ -21,7 +21,9 @@ from app.services.mavlink.message_router import MavlinkMessageRouter
 from app.services.mavlink.param_bridge import MavlinkParamBridge
 from app.services.mavlink.telemetry_bridge import MavlinkTelemetryBridge
 from app.services.websocket.manager import WebSocketManager
-from app.routers import control, video, telemetry, system, stitching
+from app.services.data_logger import DataLoggingService
+from app.routers import control, video, telemetry, system, stitching, swarm
+from app.routers import logging as logging_router
 
 # ─── Logging Setup ────────────────────────────────────────────────
 os.makedirs("logs", exist_ok=True)
@@ -90,11 +92,36 @@ param_bridge = MavlinkParamBridge(
     message_router=message_router,
     ws_manager=ws_manager,
 )
+
+# Swarm coordinator for dual-copter operations & APF
+from app.services.mavlink.swarm_coordinator import SwarmCoordinator
+from app.services.mavlink.apf_coordinator import APFConfig
+
+apf_config = APFConfig(
+    d_safe=settings.APF_D_SAFE,
+    d_influence=settings.APF_D_INFLUENCE,
+    k_att=settings.APF_K_ATT,
+    k_rep=settings.APF_K_REP,
+    max_lateral_offset_m=settings.APF_MAX_OFFSET,
+    tick_rate_hz=settings.APF_TICK_RATE_HZ,
+)
+
+swarm_coordinator = SwarmCoordinator(
+    command_bridge=command_bridge,
+    telemetry_bridge=telemetry_generator,
+    message_router=message_router,
+    ws_manager=ws_manager,
+    apf_config=apf_config,
+)
+
 message_router.register_handler({"*"}, telemetry_generator.handle_message)
 message_router.register_handler(
     {"AUTOPILOT_VERSION", "HEARTBEAT", "PARAM_VALUE"},
     param_bridge.handle_message,
 )
+
+data_logger = DataLoggingService()
+data_logger.set_telemetry_source(telemetry_generator)
 
 
 # ─── Lifespan ─────────────────────────────────────────────────────
@@ -119,7 +146,9 @@ async def lifespan(app: FastAPI):
     control.command_bridge_instance = command_bridge
     control.param_bridge_instance = param_bridge
     control.ws_manager_instance = ws_manager
+    swarm.swarm_coordinator_instance = swarm_coordinator
     system.ws_manager_instance = ws_manager
+    logging_router.data_logger_instance = data_logger
 
     # Start the single MAVLink receiver before telemetry broadcasting.
     await stitching.startup()
@@ -132,6 +161,7 @@ async def lifespan(app: FastAPI):
 
     # ─── Shutdown ──────────────────────────────────────────────────
     logger.info("Ground Station shutting down…")
+    await data_logger.shutdown()
     telemetry_task.cancel()
     video_manager.stop_all()
     await stitching.shutdown()
@@ -179,7 +209,9 @@ app.include_router(telemetry.api_router)
 app.include_router(system.api_router)
 app.include_router(control.api_router)
 app.include_router(stitching.api_router)
+app.include_router(swarm.router)
 app.include_router(peta_router)
+app.include_router(logging_router.router)
 
 
 # ─── Root ─────────────────────────────────────────────────────────

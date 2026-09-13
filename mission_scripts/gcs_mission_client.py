@@ -319,11 +319,42 @@ def reload_and_upload(mav_conn):
     """
     print("[*] Reload control_uav.py...")
     try:
-        import control_uav
-        importlib.reload(control_uav)
-        mission = control_uav.build_mission()
-        print(f"[+] Berhasil reload — {len(mission)} waypoint")
-        return upload_mission(mav_conn, mission)
+        pause_event.set()
+        
+        mission = []
+        if args and args.mission_file:
+            print(f"[*] Membaca misi dari file {args.mission_file}...")
+            try:
+                with open(args.mission_file, "r") as f:
+                    raw = json.load(f)
+                    for item in raw:
+                        mission.append({
+                            "command": item["command"],
+                            "param1": item.get("param1", 0.0),
+                            "param2": item.get("param2", 0.0),
+                            "param3": item.get("param3", 0.0),
+                            "param4": item.get("param4", 0.0),
+                            "x": item["lat"],
+                            "y": item["lon"],
+                            "z": item["alt"]
+                        })
+                print(f"[+] Berhasil memuat {len(mission)} waypoint dari file JSON.")
+            except Exception as e:
+                print(f"[-] Gagal membaca mission file: {e}")
+                stop_event.set()
+                sys.exit(1)
+        else:
+            try:
+                import control_uav
+                importlib.reload(control_uav)
+                mission = control_uav.build_mission()
+            except Exception as e:
+                print(f"[-] Gagal membaca control_uav.py: {e}")
+                stop_event.set()
+                sys.exit(1)
+                
+        success = upload_mission(mav_conn, mission)
+        return success
     except Exception as e:
         print(f"[-] Gagal reload control_uav.py: {e}")
         print("[-] Pastikan tidak ada syntax error di file!")
@@ -343,6 +374,7 @@ def main():
     parser.add_argument("--action", choices=["upload", "start", "interactive"], default="interactive", help="Aksi yang akan dijalankan. Default: interactive.")
     parser.add_argument("--ip", type=str, help="IP Raspi (override mission_config.json)")
     parser.add_argument("--port", type=int, help="Port UDP (override mission_config.json)")
+    parser.add_argument("--mission-file", type=str, help="Path JSON file untuk upload misi (override control_uav.py)")
     args = parser.parse_args()
 
     # Baca konfigurasi koneksi
@@ -380,7 +412,12 @@ def main():
         except Exception:
             pass
             
-        msg = mav_conn.recv_match(type="HEARTBEAT", blocking=True, timeout=1.0)
+        try:
+            msg = mav_conn.recv_match(type="HEARTBEAT", blocking=True, timeout=1.0)
+        except Exception as e:
+            # Catch ConnectionResetError on Windows when UDP port is temporarily unreachable
+            msg = None
+            
         if msg is not None:
             break
 
@@ -422,12 +459,29 @@ def main():
 
     # Import dan upload mission pertama kali
     try:
-        from control_uav import build_mission
-        mission = build_mission()
-        print(f"[*] Loaded {len(mission)} waypoint dari control_uav.py")
-    except ImportError as e:
-        print(f"[-] Gagal import control_uav.py: {e}")
-        print("[-] Pastikan file control_uav.py ada di direktori yang sama!")
+        mission = []
+        if args and args.mission_file:
+            print(f"[*] Membaca misi dari file {args.mission_file}...")
+            with open(args.mission_file, "r") as f:
+                raw = json.load(f)
+                for item in raw:
+                    mission.append({
+                        "command": item["command"],
+                        "param1": item.get("param1", 0.0),
+                        "param2": item.get("param2", 0.0),
+                        "param3": item.get("param3", 0.0),
+                        "param4": item.get("param4", 0.0),
+                        "x": item.get("lat", 0.0),
+                        "y": item.get("lon", 0.0),
+                        "z": item.get("alt", 0.0)
+                    })
+            print(f"[*] Loaded {len(mission)} waypoint dari {args.mission_file}")
+        else:
+            from control_uav import build_mission
+            mission = build_mission()
+            print(f"[*] Loaded {len(mission)} waypoint dari control_uav.py")
+    except Exception as e:
+        print(f"[-] Gagal load mission: {e}")
         stop_event.set()
         sys.exit(1)
 

@@ -11,6 +11,11 @@ import type {
   MetricConfig,
 } from "@/types/telemetry";
 
+export interface SwarmPaths {
+  uav3Path: number[][];
+  uav4Path: number[][];
+}
+
 interface GCSStoreState {
   config: GCSConfig | null;
   uavs: UAVRecord<UAVConnectionConfig | null>;
@@ -18,6 +23,7 @@ interface GCSStoreState {
   isConfigured: boolean;
   isEditModalOpen: boolean;
   theme: ThemeMode;
+  swarmPaths: SwarmPaths | null;
 }
 
 interface GCSStoreActions {
@@ -27,6 +33,7 @@ interface GCSStoreActions {
   markConfigured: () => void;
   setIsEditModalOpen: (open: boolean) => void;
   toggleTheme: () => void;
+  setSwarmPaths: (paths: SwarmPaths | null) => void;
 }
 
 type GCSStore = GCSStoreState & GCSStoreActions;
@@ -64,6 +71,7 @@ export function GCSProvider({ children }: { children: ReactNode }) {
   const [isConfigured, setIsConfigured] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [swarmPaths, setSwarmPathsState] = useState<SwarmPaths | null>(null);
 
   // Auto-load cached connection config after mount to prevent hydration mismatch
   useEffect(() => {
@@ -137,9 +145,13 @@ export function GCSProvider({ children }: { children: ReactNode }) {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   }, []);
 
+  const setSwarmPaths = useCallback((paths: SwarmPaths | null) => {
+    setSwarmPathsState(paths);
+  }, []);
+
   const store: GCSStore = {
-    config, uavs, uavMetrics, isConfigured, isEditModalOpen, theme,
-    setConfig, setUAVConfig, setUAVMetrics, markConfigured, setIsEditModalOpen, toggleTheme,
+    config, uavs, uavMetrics, isConfigured, isEditModalOpen, theme, swarmPaths,
+    setConfig, setUAVConfig, setUAVMetrics, markConfigured, setIsEditModalOpen, toggleTheme, setSwarmPaths,
   };
   return <GCSContext.Provider value={store}>{children}</GCSContext.Provider>;
 }

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "78f005af4450",
+    "filename": "78f005af4450.jsonl",
+    "start_time": "2026-08-28T07:01:45+00:00",
+    "end_time": "2026-08-28T07:03:24+00:00",
+    "duration_s": 99.2,
+    "data_count": 98
+  },
+  {
+    "id": "5d1ac9953e26",
+    "filename": "5d1ac9953e26.jsonl",
+    "start_time": "2026-08-28T07:43:51+00:00",
+    "end_time": "2026-08-28T08:40:29+00:00",
+    "duration_s": 3397.9,
+    "data_count": 3378,
+    "name": "cek coba"
+  },
+  {
+    "id": "21202f28f85b",
+    "filename": "21202f28f85b.jsonl",
+    "start_time": "2026-09-10T05:25:33+00:00",
+    "end_time": "2026-09-10T05:25:43+00:00",
+    "duration_s": 9.8,
+    "data_count": 9,
+    "name": "cek coba agi gtau"
+  }
+]

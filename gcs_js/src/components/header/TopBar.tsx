@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useGCSStore } from "@/hooks/useGCSStore";
+import { HeaderLoggingControl } from "@/components/control/HeaderLoggingControl";
 
 
 
@@ -31,6 +32,13 @@ export default function TopBar() {
           Mission
         </Link>
         <Link
+          href="/swarm"
+          className={pathname === "/swarm" ? "is-active" : ""}
+          aria-current={pathname === "/swarm" ? "page" : undefined}
+        >
+          Swarm
+        </Link>
+        <Link
           href="/params"
           className={pathname === "/params" ? "is-active" : ""}
           aria-current={pathname === "/params" ? "page" : undefined}
@@ -51,9 +59,18 @@ export default function TopBar() {
         >
           Full Data
         </Link>
+        <Link
+          href="/logging"
+          className={pathname === "/logging" ? "is-active" : ""}
+          aria-current={pathname === "/logging" ? "page" : undefined}
+        >
+          Logging
+        </Link>
       </nav>
 
       <div className="header-info">
+        <HeaderLoggingControl />
+
         <div>
           IP: <span className="accent-text">{config?.tailscale_ip ?? "---"}</span>
         </div>

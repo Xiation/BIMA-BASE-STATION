@@ -18,6 +18,7 @@ import {
 } from "@/config/agents";
 import { getColoredIcon } from "@/lib/coloredSvgIcon";
 import { AttitudeIndicator } from "@/components/telemetry/AttitudeIndicator";
+import { useGCSStore } from "@/hooks/useGCSStore";
 import type { MavlinkStatus, UAVId, UAVRecord } from "@/types/telemetry";
 
 export interface UAVMapTelemetry {
@@ -71,6 +72,7 @@ export default function PetaOfflineUav({
   vehicles,
   mavlinkStatuses,
 }: PetaOfflineUavProps) {
+  const { swarmPaths } = useGCSStore();
   const [missions, setMissions] = useState<Partial<Record<UAVId, Waypoint[]>>>({});
   const [visibleMissions, setVisibleMissions] = useState<UAVRecord<boolean>>({
     1: false,
@@ -230,6 +232,38 @@ export default function PetaOfflineUav({
             </Marker>
           );
         })}
+
+        {/* ─── Swarm Mission Paths ─── */}
+        {swarmPaths?.uav3Path && swarmPaths.uav3Path.length > 0 && (
+          <>
+            <Polyline
+              positions={swarmPaths.uav3Path as [number, number][]}
+              pathOptions={{ color: UAV_AGENT_BY_ID[3].color, dashArray: "8, 5", weight: 3, opacity: 0.85 }}
+            />
+            {swarmPaths.uav3Path.map((pos, idx) => (
+              <Marker
+                key={`swarm-wp-3-${idx}`}
+                position={pos as [number, number]}
+                icon={createWaypointIcon(idx, UAV_AGENT_BY_ID[3].color)}
+              />
+            ))}
+          </>
+        )}
+        {swarmPaths?.uav4Path && swarmPaths.uav4Path.length > 0 && (
+          <>
+            <Polyline
+              positions={swarmPaths.uav4Path as [number, number][]}
+              pathOptions={{ color: UAV_AGENT_BY_ID[4].color, dashArray: "8, 5", weight: 3, opacity: 0.85 }}
+            />
+            {swarmPaths.uav4Path.map((pos, idx) => (
+              <Marker
+                key={`swarm-wp-4-${idx}`}
+                position={pos as [number, number]}
+                icon={createWaypointIcon(idx, UAV_AGENT_BY_ID[4].color)}
+              />
+            ))}
+          </>
+        )}
       </MapContainer>
 
       {/* Top-left overlay: UAV 01 */}

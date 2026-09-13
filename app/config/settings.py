@@ -59,6 +59,14 @@ class Settings(BaseSettings):
     # ─── Snapshots ────────────────────────────────────────────────
     SNAPSHOT_DIR: str = Field(default="snapshots", description="Directory for saved snapshots")
 
+    # ─── APF Swarm ────────────────────────────────────────────────
+    APF_D_SAFE: float = Field(default=10.0, description="Minimum safe separation (meters)")
+    APF_D_INFLUENCE: float = Field(default=30.0, description="Distance at which avoidance begins (meters)")
+    APF_K_ATT: float = Field(default=1.0, description="Attractive force gain")
+    APF_K_REP: float = Field(default=100.0, description="Repulsive force gain")
+    APF_MAX_OFFSET: float = Field(default=20.0, description="Maximum avoidance offset (meters)")
+    APF_TICK_RATE_HZ: float = Field(default=5.0, description="APF computation loop rate (Hz)")
+
 
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
